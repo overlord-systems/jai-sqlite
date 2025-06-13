@@ -54,7 +54,7 @@ EOF
 
             FOOTER :: #string EOF
 #if CPU == .X64 {
-    #assert false "MacOS x86_64 is not supported, but you might be able to compile for that!";
+    sqlite3_lib :: #library,no_dll "bin/x64/sqlite3_lib";
 } else #if CPU == .ARM64 {
     sqlite3_lib :: #library,no_dll "bin/arm64/sqlite3_lib";
 }
@@ -79,8 +79,8 @@ EOF;
             FOOTER :: #string EOF
 #if CPU == .X64 {
     sqlite3_lib :: #library,no_dll "bin/x64/sqlite3_lib";
-} else #if CPU == .ARM64 {
-    #assert false "Linux ARM64 is not supported, but you might be able to compile for that!";
+} else {
+    #assert false "Only Linux x64 is supported, but you might be able to compile for your architecture!";
 }
 EOF;
             opts.footer = FOOTER;

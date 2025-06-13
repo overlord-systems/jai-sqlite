@@ -7621,7 +7621,7 @@ fts5_api :: struct {
 #import "Basic"; // For push_context
 
 #if CPU == .X64 {
-    #assert false "MacOS x86_64 is not supported, but you might be able to compile for that!";
+    sqlite3_lib :: #library,no_dll "bin/x64/sqlite3_lib";
 } else #if CPU == .ARM64 {
     sqlite3_lib :: #library,no_dll "bin/arm64/sqlite3_lib";
 }
