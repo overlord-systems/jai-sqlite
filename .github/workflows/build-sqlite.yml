@@ -38,7 +38,6 @@ jobs:
       - name: Build SQLite3 (Unix/Mac)
         if: matrix.platform != 'windows'
         run: |
-          cd sqlite
           ./configure
           make
 
@@ -46,7 +45,6 @@ jobs:
         if: matrix.platform == 'windows'
         shell: cmd
         run: |
-          cd sqlite
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           nmake /f Makefile.msc
 
