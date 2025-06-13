@@ -50,3 +50,14 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+#
+# Custom
+#
+*.DS_Store
+
+*.pdb
+*.rdi
+**/.build/
+
+*.dSYM
