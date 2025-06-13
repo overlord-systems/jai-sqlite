@@ -28,7 +28,7 @@ jobs:
         run: |
           curl -o sqlite.tar.gz https://sqlite.org/2025/sqlite-autoconf-3500100.tar.gz
           tar -xzf sqlite.tar.gz
-          cd sqlite
+          cd sqlite-autoconf-3500100
         shell: bash
 
       # - name: Setup MSVC (Windows)
