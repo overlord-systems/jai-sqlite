@@ -28,7 +28,7 @@ jobs:
         run: |
           curl -o sqlite.tar.gz https://sqlite.org/2025/sqlite-autoconf-3500100.tar.gz
           tar -xzf sqlite.tar.gz
-          cd sqlite-autoconf-3500100
+          mv sqlite-autoconf-3500100 sqlite
         shell: bash
 
       # - name: Setup MSVC (Windows)
@@ -38,6 +38,7 @@ jobs:
       - name: Build SQLite3 (Unix/Mac)
         if: matrix.platform != 'windows'
         run: |
+          cd sqlite
           ./configure
           make
 
@@ -45,6 +46,7 @@ jobs:
         if: matrix.platform == 'windows'
         shell: cmd
         run: |
+          cd sqlite
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           nmake /f Makefile.msc
 
