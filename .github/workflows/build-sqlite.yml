@@ -50,11 +50,30 @@ jobs:
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           nmake /f Makefile.msc
 
-      - name: Upload artifacts
+      - name: Upload Libraries Windows
+        if: matrix.platform == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: sqlite3-${{ matrix.platform }}
+          name: sqlite3-windows.?
           path: |
-            sqlite/.libs/libsqlite3.so*
-            sqlite/.libs/libsqlite3.dylib*
+            sqlite/sqlite3.def
+            sqlite/sqlite3.lib
             sqlite/sqlite3.dll
+
+      - name: Upload Libraries Mac
+        if: matrix.platform == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sqlite3-mac-arm64.?
+          path: |
+            sqlite/sqlite3.a
+            sqlite/sqlite3.dylib
+
+      - name: Upload Libraries Linux
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sqlite3-linux.?
+          path: |
+            sqlite/sqlite3.a
+            sqlite/sqlite3.so
