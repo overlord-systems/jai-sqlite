@@ -18,4 +18,4 @@ Windows is dynamically linked, so download the `sqlite3.dll` file from the relea
 
 We have a GitHub Actions workflow that builds binaries for all platforms, so if you want some binaries (e.g. dynamic binaries for Linux) then trigger the workflow and download the resulting artifacts.
 
-To generate bindings run `jai generate.jai`.
+To generate bindings run `jai generate.jai`. Bindings are generated using `include/sqlite3.h`, which we get from the `amalgamation` version from the [sqlite download](https://sqlite.org/download.html) page.
