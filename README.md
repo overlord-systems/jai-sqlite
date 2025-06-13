@@ -1,8 +1,8 @@
 # jai-sqlite
 
-Jai bindings for [SQLite3](https://github.com/sqlite/sqlite).
+Jai bindings for [SQLite3](https://github.com/sqlite/sqlite), automatically generated using Bindings Generator.
 
-Windows x64, Mac x64/arm64 and Linux x64 are supported.
+Windows x64, Mac x64/arm64, and Linux x64 are supported. We build our own binaries for all platforms [here](https://github.com/overlord-systems/jai-sqlite/actions).
 
 Currently only Windows bindings and binaries are available, but it should be *very* easy to [compile](https://www.sqlite.org/howtocompile.html) and then generate bindings using `jai generate.jai`.
 
