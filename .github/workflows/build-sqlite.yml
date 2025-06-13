@@ -15,13 +15,16 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
-            artifact: libsqlite3.so
+            arch: x64
           - os: macos-latest
             platform: macos
-            artifact: libsqlite3.dylib
+            arch: arm64
+          - os: macos-13
+            platform: macos
+            arch: x64
           - os: windows-latest
             platform: windows
-            artifact: sqlite3.dll
+            arch: x64
 
     steps:
       - name: Download SQLite3 source
@@ -54,18 +57,17 @@ jobs:
         if: matrix.platform == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: sqlite3-windows-x64
+          name: sqlite3-windows-${{ matrix.arch }}
           path: |
             sqlite/sqlite3.def
             sqlite/sqlite3.lib
-            sqlite/libsqlite3.lib
             sqlite/sqlite3.dll
 
       - name: Upload Libraries Mac
         if: matrix.platform == 'macos'
         uses: actions/upload-artifact@v4
         with:
-          name: sqlite3-mac-arm64
+          name: sqlite3-mac-${{ matrix.arch }}
           path: |
             sqlite/libsqlite3.a
             sqlite/libsqlite3.dylib
@@ -74,7 +76,7 @@ jobs:
         if: matrix.platform == 'linux'
         uses: actions/upload-artifact@v4
         with:
-          name: sqlite3-linux
+          name: sqlite3-linux-${{ matrix.arch }}
           path: |
             sqlite/libsqlite3.a
             sqlite/libsqlite3.so

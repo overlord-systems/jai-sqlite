@@ -15,7 +15,8 @@ build :: () {
 // We use 'sqlite3_lib' as the library name, eventhough the real name is 'sqlite3', because
 // there is a struct called `sqlite3` and so having the library be the same name will cause a conflict.
 //
-// However, the user must use 'sqlite3.dll'.
+// On windows the user must have 'sqlite3.dll' (I didn't find a way to statically compile sqlite3 for windows)
+// but on mac/linux we do static linking.
 generate_bindings :: () -> bool {
 
     output_filename: string;
@@ -53,7 +54,7 @@ EOF
 
             FOOTER :: #string EOF
 #if CPU == .X64 {
-    sqlite3_lib :: #library,no_dll "bin/x64/sqlite3_lib";
+    #assert false "MacOS x86_64 is not supported, but you might be able to compile for that!";
 } else #if CPU == .ARM64 {
     sqlite3_lib :: #library,no_dll "bin/arm64/sqlite3_lib";
 }
@@ -76,7 +77,11 @@ EOF;
             opts.generate_library_declarations = false;
 
             FOOTER :: #string EOF
-sqlite3_lib :: #library,no_dll "sqlite3_lib";
+#if CPU == .X64 {
+    sqlite3_lib :: #library,no_dll "bin/x64/sqlite3_lib";
+} else #if CPU == .ARM64 {
+    #assert false "Linux ARM64 is not supported, but you might be able to compile for that!";
+}
 EOF;
             opts.footer = FOOTER;
             opts.generate_library_declarations = false;
