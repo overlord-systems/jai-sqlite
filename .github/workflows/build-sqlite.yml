@@ -49,7 +49,6 @@ jobs:
           cd sqlite
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           nmake /f Makefile.msc
-          lib /def:sqlite3.def /out:sqlite3_shared.lib /machine:x64
 
       - name: Upload Libraries Windows
         if: matrix.platform == 'windows'
@@ -58,8 +57,8 @@ jobs:
           name: sqlite3-windows-x64
           path: |
             sqlite/sqlite3.def
-            sqlite/sqlite3_shared.lib
             sqlite/sqlite3.lib
+            sqlite/libsqlite3.lib
             sqlite/sqlite3.dll
 
       - name: Upload Libraries Mac
