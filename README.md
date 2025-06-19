@@ -16,76 +16,76 @@ Windows is dynamically linked, so download the `sqlite3.dll` file from the relea
 
 Here is a simple usage example showing opening/creating a database, creating a table, inserting a row, and reading rows, and error handling:
 ```jai
-    new_db: *sqlite3;
+new_db: *sqlite3;
 
-    // Open db, create if it doesn't exist
-    sqlite3_status := sqlite3_open_v2("my_sqlite.db", *new_db, SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE, null);
-    if sqlite3_status != SQLITE_OK {
-        log("failed to open/create sqlite db at 'my_sqlite.db' with err = %", get_sqlite_error(new_db), flags=.ERROR);
+// Open db, create if it doesn't exist
+sqlite3_status := sqlite3_open_v2("my_sqlite.db", *new_db, SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE, null);
+if sqlite3_status != SQLITE_OK {
+    log("failed to open/create sqlite db at 'my_sqlite.db' with err = %", get_sqlite_error(new_db), flags=.ERROR);
 
-        // This must be freed on such errors
-        if new_db sqlite3_free(new_db);
+    // This must be freed on such errors
+    if new_db sqlite3_free(new_db);
 
-        return;
+    return;
+}
+
+// We provide a jai wrapper procedures to make usage nice: 'sqlite3_exec_query'.
+//
+// One overlord is for queries that do not return rows, like insert, which returns only success and number of updated rows (check docs for 'sqlite3_changes64' for caveats).
+//
+// The other overload is for queries that return rows, which takes the struct type to parse rows into, and returns success and an array of those structs.
+//
+// This is using the first overload.
+CREATE_PROJECTS_TABLE :: #string EOF
+CREATE TABLE IF NOT EXISTS 'projects' (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL
+) STRICT;
+EOF
+success := sqlite3_exec_query(new_db, CREATE_PROJECTS_TABLE);
+if !success {
+    log("failed to create 'projects' table with err = %", get_sqlite_error(new_db), flags=.ERROR);
+    return;
+}
+
+// Insert using the first overload
+INSERT_PROJECT :: #string EOF
+INSERT INTO 'projects' (id, name) VALUES (?, ?);
+EOF
+
+project_id := "some_id";
+project_name := "My Test Project";
+success = sqlite3_exec_query(new_db, INSERT_PROJECT, project_id, project_name);
+if !success {
+    log("failed to insert project % into 'projects' table with err = %", project_name, get_sqlite_error(new_db), flags=.ERROR);
+    return;
+}
+
+// This is using the second overload, which parses rows into jai structs
+Project :: struct {
+    id: string;
+    name: string;
+}
+
+READ_ALL_PROJECTS :: #string EOF
+SELECT * FROM 'projects' LIMIT ?;
+EOF
+success=, rows := sqlite3_exec_query(new_db, Project, READ_ALL_PROJECTS, 100);
+if !success {
+
+    log("failed to read projects from db with err = %", get_sqlite_error(new_db), flags=.ERROR);
+
+    // If we fail mid-way, there might be rows to free
+    for rows {
+        free(it.id);
+        free(it.name);
     }
+    array_free(rows);
 
-    // We provide a jai wrapper procedures to make usage nice: 'sqlite3_exec_query'.
-    //
-    // One overlord is for queries that do not return rows, like insert, which returns only success and number of updated rows (check docs for 'sqlite3_changes64' for caveats).
-    //
-    // The other overload is for queries that return rows, which takes the struct type to parse rows into, and returns success and an array of those structs.
-    //
-    // This is using the first overload.
-    CREATE_PROJECTS_TABLE :: #string EOF
-    CREATE TABLE IF NOT EXISTS 'projects' (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL
-    ) STRICT;
-    EOF
-    success := sqlite3_exec_query(new_db, CREATE_PROJECTS_TABLE);
-    if !success {
-        log("failed to create 'projects' table with err = %", get_sqlite_error(new_db), flags=.ERROR);
-        return;
-    }
+    return;
+}
 
-    // Insert using the first overload
-    INSERT_PROJECT :: #string EOF
-    INSERT INTO 'projects' (id, name) VALUES (?, ?);
-    EOF
-
-    project_id := "some_id";
-    project_name := "My Test Project";
-    success = sqlite3_exec_query(new_db, INSERT_PROJECT, project_id, project_name);
-    if !success {
-        log("failed to insert project % into 'projects' table with err = %", project_name, get_sqlite_error(new_db), flags=.ERROR);
-        return;
-    }
-
-    // This is using the second overload, which parses rows into jai structs
-    Project :: struct {
-        id: string;
-        name: string;
-    }
-
-    READ_ALL_PROJECTS :: #string EOF
-    SELECT * FROM 'projects' LIMIT ?;
-    EOF
-    success=, rows := sqlite3_exec_query(new_db, Project, READ_ALL_PROJECTS, 100);
-    if !success {
-
-        log("failed to read projects from db with err = %", get_sqlite_error(new_db), flags=.ERROR);
-
-        // If we fail mid-way, there might be rows to free
-        for rows {
-            free(it.id);
-            free(it.name);
-        }
-        array_free(rows);
-
-        return;
-    }
-
-    print("my projects = %\n", rows);
+print("my projects = %\n", rows);
 ```
 
 ## Other
