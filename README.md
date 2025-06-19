@@ -31,9 +31,13 @@ if sqlite3_status != SQLITE_OK {
 
 // We provide a jai wrapper procedures to make usage nice: 'sqlite3_exec_query'.
 //
-// One overlord is for queries that do not return rows, like insert, which returns only success and number of updated rows (check docs for 'sqlite3_changes64' for caveats).
+// One overload is for queries that do not return rows, like insert, which
+// returns only success, number of updated rows (check docs for 'sqlite3_changes64' for caveats),
+// and the sqlite status code.
 //
-// The other overload is for queries that return rows, which takes the struct type to parse rows into, and returns success and an array of those structs.
+// The other overload is for queries that return rows, which
+// takes the struct type to parse rows into, and returns success,
+// array of structs representing rows, and sqlite status code.
 //
 // This is using the first overload.
 CREATE_PROJECTS_TABLE :: #string EOF
