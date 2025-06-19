@@ -1,5 +1,7 @@
 # jai-sqlite
 
+[![Build SQLite3](https://github.com/overlord-systems/jai-sqlite/actions/workflows/build-sqlite.yml/badge.svg)](https://github.com/overlord-systems/jai-sqlite/actions/workflows/build-sqlite.yml)
+
 Jai bindings for [SQLite3](https://github.com/sqlite/sqlite), automatically generated using Bindings Generator. A nice to use jai wrapper `sqlite3_exec_query` is provided for running queries along with an example of how to use it in the `Usage` section.
 
 Windows x64, Mac x64/arm64, and Linux x64 are supported. We build our own binaries for all platforms [here](https://github.com/overlord-systems/jai-sqlite/actions).
