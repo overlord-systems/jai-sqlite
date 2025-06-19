@@ -24,7 +24,7 @@ sqlite3_exec_query :: (
     sql: string,
     params: ..Any,
     ignore_unknown_columns := false
-) -> success: bool, rows : []Row_Type {
+) -> success: bool, rows : []Row_Type, sqlite_status: s32 {
 
     auto_release_temp();
 
@@ -40,20 +40,20 @@ sqlite3_exec_query :: (
     status := sqlite3_prepare_v2(db, c_sql, (sql.count+1).(s32), *stmt, null);
     if status != SQLITE_OK {
         log("failed to parse sql query with err = % and query = %", get_sqlite_error(db), sql, flags=.ERROR);
-        return false, .[];
+        return false, .[], status;
     }
 
     // Do some validations
     stmt_param_count := sqlite3_bind_parameter_count(stmt);
     if stmt_param_count != params.count {
         log("failed to execute sql query because the query requires % params but we got % params for query = %", stmt_param_count, params.count, sql, flags=.ERROR);
-        return false, .[];
+        return false, .[], SQLITE_ERROR;
     }
 
     // Bind params
-    success := bind_sqlite_params(db, stmt, sql, ..params);
+    success, status= := bind_sqlite_params(db, stmt, sql, ..params);
     if !success {
-        return false, .[];
+        return false, .[], status;
     }
 
     //
@@ -64,7 +64,7 @@ sqlite3_exec_query :: (
     step_status := sqlite3_step(stmt);
     if step_status != SQLITE_ROW && step_status != SQLITE_DONE {
         log("failed to execute sql query with status code=% and error = % in query = %", step_status, get_sqlite_error(db), sql, flags=.ERROR);
-        return false, .[];
+        return false, .[], step_status;
     }
 
     // We process column names and column types once so we can use them for each row.
@@ -118,7 +118,7 @@ sqlite3_exec_query :: (
 
                 if !ignore_unknown_columns {
                     log("failed to parse query row into type=% because column=% doesn't exist in the type in query = %", Row_Type, col, sql, flags=.ERROR);
-                    return false, rows;
+                    return false, rows, SQLITE_ERROR;
                 }
 
                 continue;
@@ -134,7 +134,7 @@ sqlite3_exec_query :: (
 
                     if col_type != SQLITE_INTEGER {
                         log("failed to parse column=% of sqlite_type=% into member=% of type=integer/enum because of type mismatch in query = %", col, col_type, member.name, sql, flags=.ERROR);
-                        return false, rows;
+                        return false, rows, SQLITE_ERROR;
                     }
 
                     // @TODO: We should protect against overflows (which would crash us) similar
@@ -153,7 +153,7 @@ sqlite3_exec_query :: (
 
                     if col_type != SQLITE_FLOAT {
                         log("failed to parse column=% of sqlite_type=% into member=% of type=float/float64 because of type mismatch in query = %", col, col_type, member.name, sql, flags=.ERROR);
-                        return false, rows;
+                        return false, rows, SQLITE_ERROR;
                     }
 
                     col_val := sqlite3_column_double(stmt, col_index);
@@ -166,7 +166,7 @@ sqlite3_exec_query :: (
 
                     if col_type != SQLITE_TEXT {
                         log("failed to parse column=% of sqlite_type=% into member=% of type=string because of type mismatch in query = %", col, col_type, member.name, sql, flags=.ERROR);
-                        return false, rows;
+                        return false, rows, SQLITE_ERROR;
                     }
 
                     // Count does NOT include the null terminator, but strings are always
@@ -187,7 +187,7 @@ sqlite3_exec_query :: (
 
                     if col_type != SQLITE_INTEGER {
                         log("failed to parse column=% of sqlite_type=% into member=% of type=bool because of type mismatch in query = %", col, col_type, member.name, sql, flags=.ERROR);
-                        return false, rows;
+                        return false, rows, SQLITE_ERROR;
                     }
 
                     col_val := sqlite3_column_int(stmt, col_index);
@@ -195,20 +195,15 @@ sqlite3_exec_query :: (
 
                 case;
                     log("failed to parse column=% of sqlite_type=% into member=% of type=% because this member type isn't supported in query = %", col, col_type, member.name, member_type, sql, flags=.ERROR);
-                    return false, rows;
+                    return false, rows, SQLITE_ERROR;
             }
         }
     }
 
-    if step_status != SQLITE_DONE {
-        log("failed to execute sql query with status code=% and error = % in query = %", step_status, get_sqlite_error(db), sql, flags=.ERROR);
-        return false, rows;
-    }
-
-    return true, rows;
+    return step_status == SQLITE_DONE, rows, step_status;
 }
 
-sqlite3_exec_query :: (db: *sqlite3, sql: string, params: ..Any) -> success: bool, updated_rows := 0 {
+sqlite3_exec_query :: (db: *sqlite3, sql: string, params: ..Any) -> success: bool, updated_rows := 0, sqlite_status: s32 {
 
     auto_release_temp();
 
@@ -224,20 +219,20 @@ sqlite3_exec_query :: (db: *sqlite3, sql: string, params: ..Any) -> success: boo
     status := sqlite3_prepare_v2(db, c_sql, (sql.count+1).(s32), *stmt, null);
     if status != SQLITE_OK {
         log("failed to parse sql query with err = % and query = %", get_sqlite_error(db), sql, flags=.ERROR);
-        return false;
+        return false, sqlite_status=status;
     }
 
     // Do some validations
     stmt_param_count := sqlite3_bind_parameter_count(stmt);
     if stmt_param_count != params.count {
         log("failed to execute sql query because the query requires % params but we got % params for query = %", stmt_param_count, params.count, sql, flags=.ERROR);
-        return false;
+        return false, sqlite_status=SQLITE_ERROR;
     }
 
     // Bind params
-    success := bind_sqlite_params(db, stmt, sql, ..params);
+    success, status= := bind_sqlite_params(db, stmt, sql, ..params);
     if !success {
-        return false;
+        return false, sqlite_status=status;
     }
 
     // Reach done or error state
@@ -246,16 +241,11 @@ sqlite3_exec_query :: (db: *sqlite3, sql: string, params: ..Any) -> success: boo
         step_status = sqlite3_step(stmt);
     }
 
-    if step_status != SQLITE_DONE {
-        log("failed to execute sql query with status code=% and error = % in query = %", step_status, get_sqlite_error(db), sql, flags=.ERROR);
-        return false;
-    }
-
     rows_changed := sqlite3_changes64(db);
-    return true, rows_changed;
+    return step_status == SQLITE_DONE, rows_changed, step_status;
 }
 
-bind_sqlite_params :: (db: *sqlite3, stmt: *sqlite3_stmt, sql: string, params: ..Any) -> success: bool {
+bind_sqlite_params :: (db: *sqlite3, stmt: *sqlite3_stmt, sql: string, params: ..Any) -> success: bool, sqlite_status: s32 {
 
     for param: params {
 
@@ -281,7 +271,7 @@ bind_sqlite_params :: (db: *sqlite3, stmt: *sqlite3_stmt, sql: string, params: .
 
                     if !info.signed && param.value_pointer.(*u64).* > S64_MAX.(u64) {
                         log("failed to bind sql param at index=% because sqlite only supports s64, but the provided parameter is u64 with a value larger than S64_MAX in query = %", param_index-1, sql, flags=.ERROR);
-                        return false;
+                        return false, SQLITE_ERROR;
                     }
 
                     val = param.value_pointer.(*s64).*;
@@ -304,14 +294,14 @@ bind_sqlite_params :: (db: *sqlite3, stmt: *sqlite3_stmt, sql: string, params: .
 
             case;
                 log("failed to bind sql param at index=% because its type=% is not supported in query = %", param_index-1, param.type.type, sql, flags=.ERROR);
-                return false;
+                return false, SQLITE_ERROR;
         }
 
         if status != SQLITE_OK {
             log("failed to bind sql param at index=% and type=% with error = % for sql = %", param_index-1, param.type.type, get_sqlite_error(db), sql, flags=.ERROR);
-            return false;
+            return false, status;
         }
     }
 
-    return true;
+    return true, SQLITE_OK;
 }
