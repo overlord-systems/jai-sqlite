@@ -78,6 +78,9 @@ EOF;
 
             FOOTER :: #string EOF
 #if CPU == .X64 {
+    // Those are needed by sqlite3
+    libm :: #library,system,link_always "libm";
+    libdl :: #library,system,link_always "libdl";
     sqlite3_lib :: #library,no_dll "bin/x64/sqlite3_lib";
 } else {
     #assert false "Only Linux x64 is supported, but you might be able to compile for your architecture!";
