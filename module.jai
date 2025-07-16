@@ -247,13 +247,33 @@ sqlite3_exec_query :: (db: *sqlite3, sql: string, params: ..Any) -> success: boo
 
 bind_sqlite_params :: (db: *sqlite3, stmt: *sqlite3_stmt, sql: string, params: ..Any) -> success: bool, sqlite_status: s32 {
 
-    for param: params {
+    for * param: params {
 
         // Param indices start at 1
         param_index := it_index.(s32) + 1;
 
+        // Handle pointers and null pointers.
+        //
+        // If we find a pointer we update the param to point to the
+        // underlying type so that it can be handled by the switch case.
+        //
+        //
+        if param.type.type == .POINTER {
+
+            pointer_type_info := param.type.(*Type_Info_Pointer);
+
+            if param.value_pointer.(**void).* {
+                param.type = pointer_type_info.pointer_to;
+                param.value_pointer = param.value_pointer.(**void).*;
+            }
+        }
+
         status: s32;
         if param.type.type == {
+
+            // We only reach here in the case of null pointers
+            case .POINTER;
+                status = sqlite3_bind_null(stmt, param_index);
 
             case .ENUM; #through;
             case .INTEGER;
@@ -287,6 +307,13 @@ bind_sqlite_params :: (db: *sqlite3, stmt: *sqlite3_stmt, sql: string, params: .
 
             case .STRING;
                 str := param.value_pointer.(*string).*;
+
+                // Bind text will insert null if str.data is null, so if
+                // the string is empty we give it a valid data but keep count zero
+                // to insert an empty string
+                DUMMY :: "A";
+                if !str str.data = DUMMY.data;
+
                 status = sqlite3_bind_text(stmt, param_index, str.data, str.count.(s32), null);
 
             case .BOOL;
