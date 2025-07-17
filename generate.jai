@@ -40,12 +40,12 @@ EOF
             opts.generate_library_declarations = false;
 
             #if CPU == .X64 {
-                array_add(*opts.libpaths, "windows/bin/x64");
+                array_add(*opts.library_search_paths, "windows/bin/x64");
             } else {
                 assert(false, "the CPU % is currently unsupported. You might be able to add support for it though!", CPU);
             }
 
-            array_add(*opts.libnames, "sqlite3_lib");
+            array_add(*opts.libraries, .{filename="sqlite3_lib"});
 
         } else #if OS == .MACOS {
 
@@ -60,16 +60,16 @@ EOF
 }
 EOF;
             #if CPU == .X64 {
-                array_add(*opts.libpaths, "macos/bin/x64");
+                array_add(*opts.library_search_paths, "macos/bin/x64");
             } else #if CPU == .ARM64 {
-                array_add(*opts.libpaths, "macos/bin/arm64");
+                array_add(*opts.library_search_paths, "macos/bin/arm64");
             } else {
                 assert(false, "the CPU % is currently unsupported. You might be able to add support for it though!", CPU);
             }
 
             opts.footer = FOOTER;
 
-            array_add(*opts.libnames, "sqlite3_lib");
+            array_add(*opts.libraries, .{filename="sqlite3_lib"});
 
         } else #if OS == .LINUX {
 
@@ -89,7 +89,7 @@ EOF;
             opts.footer = FOOTER;
             opts.generate_library_declarations = false;
 
-            array_add(*opts.libnames, "sqlite3_lib");
+            array_add(*opts.libraries, .{filename="sqlite3_lib"});
 
         } else {
             assert(false, "the OS % is currently unsupported. You might be able to add support for it though!", OS);
