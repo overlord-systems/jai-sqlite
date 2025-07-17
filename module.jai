@@ -36,7 +36,7 @@ sqlite3_exec_query :: (
         }
     }
 
-    c_sql := temp_c_string(sql);    // Its faster if we pass a null-terminated string
+    c_sql := temp_c_string(sql);    // It's faster if we pass a null-terminated string
     status := sqlite3_prepare_v2(db, c_sql, (sql.count+1).(s32), *stmt, null);
     if status != SQLITE_OK {
         log("failed to parse sql query with err = % and query = %", get_sqlite_error(db), sql, flags=.ERROR);
@@ -215,7 +215,7 @@ sqlite3_exec_query :: (db: *sqlite3, sql: string, params: ..Any) -> success: boo
         }
     }
 
-    c_sql := temp_c_string(sql);    // Its faster if we pass a null-terminated string
+    c_sql := temp_c_string(sql);    // It's faster if we pass a null-terminated string
     status := sqlite3_prepare_v2(db, c_sql, (sql.count+1).(s32), *stmt, null);
     if status != SQLITE_OK {
         log("failed to parse sql query with err = % and query = %", get_sqlite_error(db), sql, flags=.ERROR);
