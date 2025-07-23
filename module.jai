@@ -200,7 +200,13 @@ sqlite3_exec_query :: (
         }
     }
 
-    return step_status == SQLITE_DONE, rows, step_status;
+    success = step_status == SQLITE_DONE;
+    if !success {
+        log("failed to execute sql query because the query ended with status=% for query = %", step_status, sql, flags=.ERROR);
+        return false, rows, step_status;
+    }
+
+    return success, rows, step_status;
 }
 
 sqlite3_exec_query :: (db: *sqlite3, sql: string, params: ..Any) -> success: bool, updated_rows := 0, sqlite_status: s32 {
@@ -241,8 +247,14 @@ sqlite3_exec_query :: (db: *sqlite3, sql: string, params: ..Any) -> success: boo
         step_status = sqlite3_step(stmt);
     }
 
+    success = step_status == SQLITE_DONE;
+    if !success {
+        log("failed to execute sql query because the query ended with status=% for query = %", step_status, sql, flags=.ERROR);
+        return false, sqlite_status=step_status;
+    }
+
     rows_changed := sqlite3_changes64(db);
-    return step_status == SQLITE_DONE, rows_changed, step_status;
+    return success, rows_changed, step_status;
 }
 
 bind_sqlite_params :: (db: *sqlite3, stmt: *sqlite3_stmt, sql: string, params: ..Any) -> success: bool, sqlite_status: s32 {
