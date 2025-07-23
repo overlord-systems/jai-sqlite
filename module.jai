@@ -26,8 +26,6 @@ sqlite3_exec_query :: (
     ignore_unknown_columns := false
 ) -> success: bool, rows : []Row_Type, sqlite_status: s32 {
 
-    auto_release_temp();
-
     // Prepare statement
     stmt: *sqlite3_stmt;
     defer {
@@ -210,8 +208,6 @@ sqlite3_exec_query :: (
 }
 
 sqlite3_exec_query :: (db: *sqlite3, sql: string, params: ..Any) -> success: bool, updated_rows := 0, sqlite_status: s32 {
-
-    auto_release_temp();
 
     // Prepare statement
     stmt: *sqlite3_stmt;
