@@ -115,7 +115,7 @@ sqlite3_exec_query :: (
             if !member {
 
                 if !ignore_unknown_columns {
-                    log("failed to parse query row into type=% because column=% doesn't exist in the type in query = %", Row_Type, col, sql, flags=.ERROR);
+                    log("failed to parse query row into struct=% because column=% doesn't exist in the struct in query = %", Row_Type, col, sql, flags=.ERROR);
                     return false, rows, SQLITE_ERROR;
                 }
 
