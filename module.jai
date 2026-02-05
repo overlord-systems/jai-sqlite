@@ -97,7 +97,7 @@ sqlite3_exec_query :: (
         col_count := sqlite3_data_count(stmt);
         if !col_count continue;
 
-        array_add(*rows, .{});
+        array_add(*rows, {});
         row := *rows[rows.count-1];
         row_as_bytes := row.(*u8);
         for col: col_names {
@@ -109,7 +109,7 @@ sqlite3_exec_query :: (
                 continue;
             }
 
-            // @TODO: @PERF: cache get_field results before parsing rows
+            // @PERF: cache get_field results before parsing rows
             // Find member with the same name as this column
             member, offset_in_bytes := get_field(ti, col);
             if !member {
@@ -125,6 +125,18 @@ sqlite3_exec_query :: (
             // Parse column value into member
             member_type := member.type.type;
             member_slot : *void = row_as_bytes + offset_in_bytes;
+
+            if member_type == .POINTER {
+                member_type = member.type.(*Type_Info_Pointer).pointer_to.type;
+            } else if member_type == .VARIANT {
+
+                member_type_info := member.type;
+                while member_type_info.type == .VARIANT {
+                    member_type_info = member_type_info.(*Type_Info_Variant).variant_of;
+                }
+                member_type = member_type_info.type;
+            }
+
             if member_type == {
 
                 case .ENUM; #through;
@@ -260,12 +272,13 @@ bind_sqlite_params :: (db: *sqlite3, stmt: *sqlite3_stmt, sql: string, params: .
         // Param indices start at 1
         param_index := it_index.(s32) + 1;
 
-        // Handle pointers and null pointers.
+        // Handle pointers, null pointers, and variants (i.e., '#type' stuff).
         //
         // If we find a pointer we update the param to point to the
         // underlying type so that it can be handled by the switch case.
         //
-        //
+        // Similar story with variants, but we don't dereference the value pointer as it's only a type change.
+        // Also, with variants we keep going through types till we reach the actual non-derived type pointed (variants can point to other variants that then point to 'real' types).
         if param.type.type == .POINTER {
 
             pointer_type_info := param.type.(*Type_Info_Pointer);
@@ -273,6 +286,12 @@ bind_sqlite_params :: (db: *sqlite3, stmt: *sqlite3_stmt, sql: string, params: .
             if param.value_pointer.(**void).* {
                 param.type = pointer_type_info.pointer_to;
                 param.value_pointer = param.value_pointer.(**void).*;
+            }
+
+        } else if param.type.type == .VARIANT {
+
+            while param.type.type == .VARIANT {
+                param.type = param.type.(*Type_Info_Variant).variant_of;
             }
         }
 
